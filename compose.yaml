@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gymup
+      POSTGRES_USER: gymup
+      POSTGRES_PASSWORD: gymup
+    ports:
+      - "5432:5432"
+    volumes:
+      - gymup-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymup -d gymup"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      GYMUP_DATABASE_URL: postgresql+asyncpg://gymup:gymup@postgres:5432/gymup
+    ports:
+      - "8000:8000"
+    volumes:
+      - gymup-media:/srv/gymup/data/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  gymup-postgres-data:
+  gymup-media:
