@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: gymup-kotlin-api
+  http:
+    converters:
+      preferred-json-mapper: jackson2
+  datasource:
+    url: ${GYMUP_JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/gymup}
+    username: ${GYMUP_DATABASE_USER:gymup}
+    password: ${GYMUP_DATABASE_PASSWORD:gymup}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      initialization-fail-timeout: -1
+
+gymup:
+  environment: ${GYMUP_ENVIRONMENT:production}
+  public-base-url: ${GYMUP_KOTLIN_PUBLIC_BASE_URL:http://localhost:8001}
+  media-root: ${GYMUP_MEDIA_ROOT:./data/media}
+  jwt:
+    secret: ${GYMUP_JWT_SECRET:local-development-only-change-this-secret}
+
+server:
+  port: ${GYMUP_KOTLIN_PORT:8001}

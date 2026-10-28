@@ -9,3 +9,6 @@ __pycache__/
 htmlcov/
 
 data/
+/kotlin-api/.gradle/
+/kotlin-api/build/
+*.egg-info/
