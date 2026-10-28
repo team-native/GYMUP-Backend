@@ -1,14 +1,14 @@
-.venv/
-__pycache__/
-*.py[cod]
-.env
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
 
-data/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+
 .venv/
 __pycache__/
 *.py[cod]
@@ -20,3 +20,5 @@ __pycache__/
 htmlcov/
 data/
 *.egg-info/
+/kotlin-api/.gradle/
+/kotlin-api/build/
