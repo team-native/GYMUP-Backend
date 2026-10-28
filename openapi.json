@@ -1,0 +1,3767 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GymUp Backend API",
+    "version": "0.1.0",
+    "description": "GymUp API 명세를 옮긴 계약 초안입니다. 원본의 요청·응답 형태를 x-source-* 확장 필드로 보존했습니다."
+  },
+  "servers": [
+    {
+      "description": "로컬 개발",
+      "url": "http://localhost:8080"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/users/me/onboarding": {
+      "put": {
+        "tags": [
+          "AUTH"
+        ],
+        "summary": "최초 사용자 설정 저장",
+        "description": "운동 경험·운동 목적·주간 운동 횟수를 저장하고 초기 사용자 프로필을 완성한다.",
+        "operationId": "auth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {userId, profileCompleted, experienceLevel, goalType, weeklyWorkoutTarget}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "VALIDATION_ERROR"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ALREADY_COMPLETED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ALREADY_COMPLETED"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {experienceLevel, goalType, weeklyWorkoutTarget}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {experienceLevel, goalType, weeklyWorkoutTarget}",
+        "x-source-response": "{userId, profileCompleted, experienceLevel, goalType, weeklyWorkoutTarget}",
+        "x-priority": "원본 AUTH-001 · P0 · MVP"
+      }
+    },
+    "/api/v1/users/me/settings/rest-time": {
+      "patch": {
+        "tags": [
+          "SETTINGS"
+        ],
+        "summary": "기본 휴식시간 설정",
+        "description": "운동별 설정이 없을 때 사용할 기본 휴식시간을 저장한다.",
+        "operationId": "settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {defaultRestSeconds,updatedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "OUT_OF_RANGE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OUT_OF_RANGE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {defaultRestSeconds}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {defaultRestSeconds}",
+        "x-source-response": "{defaultRestSeconds,updatedAt}",
+        "x-priority": "원본 SETTINGS-001 · P1 · MVP"
+      }
+    },
+    "/api/v1/routines/{routineId}/playlist": {
+      "put": {
+        "tags": [
+          "PLAYLIST"
+        ],
+        "summary": "루틴 플레이리스트 연결",
+        "description": "루틴에 Apple Music 또는 Spotify 플레이리스트 참조를 연결한다.",
+        "operationId": "playlist",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "routineId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {routineId,playlist:{provider,playlistId,playlistName,externalUrl},updatedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_PROVIDER"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_PROVIDER"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_NOT_FOUND"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {provider,playlistId,playlistName,externalUrl}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: routineId · Body: {provider,playlistId,playlistName,externalUrl}",
+        "x-source-response": "{routineId,playlist:{provider,playlistId,playlistName,externalUrl},updatedAt}",
+        "x-priority": "원본 PLAYLIST-001 · P2 · V2 · 외부 재생은 클라이언트"
+      }
+    },
+    "/api/v1/photos": {
+      "get": {
+        "tags": [
+          "PHOTO"
+        ],
+        "summary": "Progress Album 조회",
+        "description": "과거 Progress Shot을 날짜순으로 조회해 비교 화면에 제공한다.",
+        "operationId": "photo-progress-album",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "cursor",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "size",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "from",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "to",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "sort",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {items:[{photoId,workoutId,capturedAt,thumbnailUrl}],nextCursor}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_QUERY"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_QUERY"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: cursor, size, from, to, sort",
+        "x-source-response": "{items:[{photoId,workoutId,capturedAt,thumbnailUrl}],nextCursor}",
+        "x-priority": "원본 PHOTO-005 · P2 · V2"
+      }
+    },
+    "/api/v1/photos/{photoId}/download-url": {
+      "get": {
+        "tags": [
+          "PHOTO"
+        ],
+        "summary": "사진 다운로드 URL 조회",
+        "description": "편집 완료 사진을 기기에 저장할 수 있는 단기 다운로드 URL을 발급한다.",
+        "operationId": "photo-url",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "photoId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {photoId,downloadUrl,expiresAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PHOTO_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PHOTO_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PHOTO_NOT_READY"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PHOTO_NOT_READY"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: photoId",
+        "x-source-response": "{photoId,downloadUrl,expiresAt}",
+        "x-priority": "원본 PHOTO-004 · P0 · MVP · 기기 저장은 클라이언트"
+      }
+    },
+    "/api/v1/photos/{photoId}/stamps": {
+      "post": {
+        "tags": [
+          "PHOTO"
+        ],
+        "summary": "Workout Stamp 합성",
+        "description": "루틴·운동시간·세트·Growth·XP를 선택한 레이아웃으로 사진에 합성한다.",
+        "operationId": "photo-workout-stamp",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "photoId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {jobId,photoId,status:PROCESSING}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_LAYOUT"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_LAYOUT"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PHOTO_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PHOTO_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PROCESSING"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PROCESSING"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {layoutId,fields:[routine,duration,sets,growth,xp]}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: photoId · Body: {layoutId,fields:[routine,duration,sets,growth,xp]}",
+        "x-source-response": "{jobId,photoId,status:PROCESSING}",
+        "x-priority": "원본 PHOTO-003 · P1 · MVP"
+      }
+    },
+    "/api/v1/photos/{photoId}/filters": {
+      "post": {
+        "tags": [
+          "PHOTO"
+        ],
+        "summary": "사진 필터 적용",
+        "description": "Natural·Pump·Definition·Mirror 톤 보정 프리셋을 적용한다.",
+        "operationId": "photo",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "photoId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {jobId,photoId,status:PROCESSING}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_FILTER"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_FILTER"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PHOTO_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PHOTO_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "PROCESSING"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "PROCESSING"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {preset,adjustments:{contrast,shadow,sharpness,highlight,tone}}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: photoId · Body: {preset,adjustments:{contrast,shadow,sharpness,highlight,tone}}",
+        "x-source-response": "{jobId,photoId,status:PROCESSING}",
+        "x-priority": "원본 PHOTO-002 · P1 · 부분 MVP · 체형 변형 금지"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/photos": {
+      "post": {
+        "tags": [
+          "PHOTO"
+        ],
+        "summary": "오운완 사진 업로드 준비",
+        "description": "완료된 운동에 연결할 Progress Shot 메타데이터와 업로드 URL을 생성한다.",
+        "operationId": "photo",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {photoId,uploadUrl,uploadHeaders,expiresAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_FILE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_FILE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_NOT_FOUND"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FILE_TOO_LARGE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FILE_TOO_LARGE"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {fileName,contentType,size}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: {fileName,contentType,size}",
+        "x-source-response": "{photoId,uploadUrl,uploadHeaders,expiresAt}",
+        "x-priority": "원본 PHOTO-001 · P1 · MVP · 촬영은 클라이언트"
+      }
+    },
+    "/api/v1/statistics/exercises/{exerciseId}": {
+      "get": {
+        "tags": [
+          "HISTORY"
+        ],
+        "summary": "운동 성장 통계 조회",
+        "description": "기간별 Weight·Estimated 1RM·Volume 추이를 조회한다.",
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "exerciseId",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "metric",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "from",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "to",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "interval",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {exerciseId,metric,points:[{date,value}],summary}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_QUERY"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_QUERY"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EXERCISE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EXERCISE_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: exerciseId · Query: metric, from, to, interval",
+        "x-source-response": "{exerciseId,metric,points:[{date,value}],summary}",
+        "x-priority": "원본 HISTORY-003 · P2 · V2"
+      }
+    },
+    "/api/v1/workouts/{workoutId}": {
+      "get": {
+        "tags": [
+          "HISTORY"
+        ],
+        "summary": "운동 기록 상세 조회",
+        "description": "선택한 세션의 Exercise·Set·Reps·Weight·PR 상세를 조회한다.",
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {workoutId,routine,duration,totalSets,volume,exercises:[{sets:[{reps,weight,pr}]}]}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId",
+        "x-source-response": "{workoutId,routine,duration,totalSets,volume,exercises:[{sets:[{reps,weight,pr}]}]}",
+        "x-priority": "원본 HISTORY-002 · P0 · MVP"
+      }
+    },
+    "/api/v1/workouts": {
+      "get": {
+        "tags": [
+          "HISTORY"
+        ],
+        "summary": "운동 기록 목록 조회",
+        "description": "과거 Workout Session을 최신순 커서 페이지네이션으로 조회한다.",
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "cursor",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "size",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "from",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "to",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "routineId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {items:[{workoutId,date,routineName,duration,totalSets,volume}],nextCursor}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_QUERY"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_QUERY"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: cursor, size, from, to, routineId",
+        "x-source-response": "{items:[{workoutId,date,routineName,duration,totalSets,volume}],nextCursor}",
+        "x-priority": "원본 HISTORY-001 · P0 · MVP"
+      },
+      "post": {
+        "tags": [
+          "WORKOUT"
+        ],
+        "summary": "운동 세션 시작",
+        "description": "선택한 루틴의 스냅샷으로 Workout Session을 생성하고 시작한다.",
+        "operationId": "workout",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {workoutId,status:IN_PROGRESS,routineSnapshot,currentExercise,startedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EMPTY_ROUTINE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EMPTY_ROUTINE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_WORKOUT_EXISTS"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_WORKOUT_EXISTS"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {routineId, startedAt, timezone}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {routineId, startedAt, timezone}",
+        "x-source-response": "{workoutId,status:IN_PROGRESS,routineSnapshot,currentExercise,startedAt}",
+        "x-priority": "원본 WORKOUT-001 · P0 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/summary": {
+      "get": {
+        "tags": [
+          "REWARD"
+        ],
+        "summary": "운동 결과 요약 조회",
+        "description": "완료 운동의 시간·세트·볼륨·PR·Growth·XP와 후속 보상을 조회한다.",
+        "operationId": "reward",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {duration,totalSets,volume,prs,growthDelta,xp,levelUp,avatarGrowth,progressShotAvailable}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "SUMMARY_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "SUMMARY_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId",
+        "x-source-response": "{duration,totalSets,volume,prs,growthDelta,xp,levelUp,avatarGrowth,progressShotAvailable}",
+        "x-priority": "원본 REWARD-004 · P0 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/complete": {
+      "post": {
+        "tags": [
+          "REWARD"
+        ],
+        "summary": "운동 세션 완료",
+        "description": "마지막 세트 완료 후 종료 시각·볼륨·PR·XP·Growth를 확정한다.",
+        "operationId": "reward",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {workoutId,status:COMPLETED,duration,totalSets,volume,prs,xp,growthDelta}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_INCOMPLETE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_INCOMPLETE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ALREADY_COMPLETED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ALREADY_COMPLETED"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {endedAt,expectedVersion}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: {endedAt,expectedVersion}",
+        "x-source-response": "{workoutId,status:COMPLETED,duration,totalSets,volume,prs,xp,growthDelta}",
+        "x-priority": "원본 REWARD-003 · P0 · MVP · 멱등 처리"
+      }
+    },
+    "/api/v1/tools/plate-calculator": {
+      "post": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "원판 조합 계산",
+        "description": "목표 총중량과 바 중량·사용 가능 원판으로 양쪽 원판 조합을 계산한다.",
+        "operationId": "rest",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {achievable,eachSide:[{weight,count}],actualWeight,remainder}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_WEIGHT"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_WEIGHT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "COMBINATION_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "COMBINATION_NOT_FOUND"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {targetWeight,barWeight,availablePlates:[...]}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {targetWeight,barWeight,availablePlates:[...]}",
+        "x-source-response": "{achievable,eachSide:[{weight,count}],actualWeight,remainder}",
+        "x-priority": "원본 REST-006 · P2 · V2 · 무상태 계산"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/next-set": {
+      "get": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "다음 세트 조회",
+        "description": "휴식 중 표시할 다음 Exercise·중량·횟수·세트 번호를 조회한다.",
+        "operationId": "rest",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {exerciseId,exerciseName,setIndex,weight,reps,restEndsAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_OR_NEXT_SET_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_OR_NEXT_SET_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId",
+        "x-source-response": "{exerciseId,exerciseName,setIndex,weight,reps,restEndsAt}",
+        "x-priority": "원본 REST-005 · P1 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/rests/current": {
+      "get": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "현재 휴식 상태 조회",
+        "description": "휴식 종료 시각·남은 시간·알림 기준을 조회한다.",
+        "operationId": "rest",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {restId,status,startedAt,endsAt,remainingSeconds,notificationAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_REST_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_REST_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId",
+        "x-source-response": "{restId,status,startedAt,endsAt,remainingSeconds,notificationAt}",
+        "x-priority": "원본 REST-004 · P0 · MVP · 앱 알림/햅틱 기준"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/rests/current/skip": {
+      "post": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "휴식 건너뛰기",
+        "description": "진행 중인 휴식을 종료하고 다음 세트 준비 상태로 전환한다.",
+        "operationId": "rest",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {restId,status:SKIPPED,nextSet}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_REST_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_REST_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_WORKOUT_STATE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_WORKOUT_STATE"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: 없음",
+        "x-source-response": "{restId,status:SKIPPED,nextSet}",
+        "x-priority": "원본 REST-003 · P1 · MVP · 멱등 처리"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/rests/current/extend": {
+      "patch": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "휴식시간 연장",
+        "description": "진행 중인 휴식시간을 15초 연장한다.",
+        "operationId": "rest",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {restId,endsAt,remainingSeconds}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "MAX_REST_EXCEEDED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "MAX_REST_EXCEEDED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_REST_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_REST_NOT_FOUND"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {seconds:15}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: {seconds:15}",
+        "x-source-response": "{restId,endsAt,remainingSeconds}",
+        "x-priority": "원본 REST-002 · P1 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/rests": {
+      "post": {
+        "tags": [
+          "REST"
+        ],
+        "summary": "휴식 타이머 시작",
+        "description": "세트 완료 직후 운동별 또는 기본 휴식시간으로 타이머 상태를 생성한다.",
+        "operationId": "rest",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {restId,startedAt,endsAt,durationSeconds,nextSet}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_DURATION"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_DURATION"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_OR_SET_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_OR_SET_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "REST_ALREADY_ACTIVE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "REST_ALREADY_ACTIVE"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {setId,durationSeconds}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: {setId,durationSeconds}",
+        "x-source-response": "{restId,startedAt,endsAt,durationSeconds,nextSet}",
+        "x-priority": "원본 REST-001 · P0 · MVP · 서버는 기준 시각 보관"
+      }
+    },
+    "/api/v1/exercises/{exerciseId}/first-time-status": {
+      "get": {
+        "tags": [
+          "GUIDE"
+        ],
+        "summary": "최초 운동 여부 조회",
+        "description": "사용자의 해당 Exercise 수행 이력 존재 여부를 조회한다.",
+        "operationId": "guide",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "exerciseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {exerciseId,isFirstTime,guideAvailable}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EXERCISE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EXERCISE_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: exerciseId",
+        "x-source-response": "{exerciseId,isFirstTime,guideAvailable}",
+        "x-priority": "원본 GUIDE-002 · P2 · 부분 MVP"
+      }
+    },
+    "/api/v1/exercises/{exerciseId}/guide": {
+      "get": {
+        "tags": [
+          "GUIDE"
+        ],
+        "summary": "운동 자세 가이드 조회",
+        "description": "짧은 동작 미디어·주요 자극 부위·핵심 자세·흔한 실수를 조회한다.",
+        "operationId": "guide",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "exerciseId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {exerciseId,mediaUrl,targetMuscles,keyPoints,commonMistakes}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "GUIDE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "GUIDE_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: exerciseId",
+        "x-source-response": "{exerciseId,mediaUrl,targetMuscles,keyPoints,commonMistakes}",
+        "x-priority": "원본 GUIDE-001 · P1 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/current-exercise": {
+      "patch": {
+        "tags": [
+          "WORKOUT"
+        ],
+        "summary": "다음 운동으로 이동",
+        "description": "현재 운동 완료를 검증하고 다음 운동 또는 종료 상태로 전환한다.",
+        "operationId": "workout",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {workoutId,currentExercise,nextExercise,status}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "SETS_INCOMPLETE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "SETS_INCOMPLETE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_STATE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_STATE"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {completedExerciseId}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId · Body: {completedExerciseId}",
+        "x-source-response": "{workoutId,currentExercise,nextExercise,status}",
+        "x-priority": "원본 WORKOUT-004 · P0 · MVP"
+      }
+    },
+    "/api/v1/exercises/{exerciseId}/previous-record": {
+      "get": {
+        "tags": [
+          "WORKOUT"
+        ],
+        "summary": "운동별 이전 기록 조회",
+        "description": "해당 운동의 가장 최근 완료 세션 기록을 조회한다.",
+        "operationId": "workout",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "exerciseId",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "beforeWorkoutId",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {exerciseId,hasPreviousRecord,weight,reps,setIndex,performedAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EXERCISE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EXERCISE_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: exerciseId · Query: beforeWorkoutId(optional)",
+        "x-source-response": "{exerciseId,hasPreviousRecord,weight,reps,setIndex,performedAt}",
+        "x-priority": "원본 WORKOUT-003 · P0 · MVP"
+      }
+    },
+    "/api/v1/workouts/{workoutId}/sets": {
+      "post": {
+        "tags": [
+          "WORKOUT"
+        ],
+        "summary": "운동 세트 기록",
+        "description": "현재 운동의 중량·횟수·세트 번호·수행 시각을 기록한다.",
+        "operationId": "workout",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          },
+          {
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "name": "Idempotency-Key",
+            "required": false
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {setId,workoutId,exerciseId,setIndex,pr,nextAction,rest}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_SET"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_SET"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WORKOUT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "DUPLICATE_SET"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "DUPLICATE_SET"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {exerciseId,setIndex,weight,reps,completedAt}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Header: Idempotency-Key · Path: workoutId · Body: {exerciseId,setIndex,weight,reps,completedAt}",
+        "x-source-response": "{setId,workoutId,exerciseId,setIndex,pr,nextAction,rest}",
+        "x-priority": "원본 WORKOUT-002 · P0 · MVP · Idempotency-Key 권장"
+      }
+    },
+    "/api/v1/routines/{routineId}/exercises/order": {
+      "put": {
+        "tags": [
+          "ROUTINE"
+        ],
+        "summary": "루틴 운동 순서 변경",
+        "description": "Drag & Drop 결과에 맞춰 루틴 운동 순서를 원자적으로 재정렬한다.",
+        "operationId": "routine",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "routineId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {routineId, orderedExercises, updatedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_ORDER"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_ORDER"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_IN_USE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_IN_USE"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {exerciseIds:[...]}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: routineId · Body: {exerciseIds:[...]}",
+        "x-source-response": "{routineId, orderedExercises, updatedAt}",
+        "x-priority": "원본 ROUTINE-003 · P1 · MVP"
+      }
+    },
+    "/api/v1/routines/{routineId}/exercises": {
+      "patch": {
+        "tags": [
+          "ROUTINE"
+        ],
+        "summary": "루틴 운동 구성 수정",
+        "description": "루틴의 Exercise를 추가·수정·삭제한다.",
+        "operationId": "routine",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "routineId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {routineId, exercises, updatedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EMPTY_ROUTINE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EMPTY_ROUTINE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_OR_EXERCISE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_OR_EXERCISE_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ROUTINE_IN_USE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ROUTINE_IN_USE"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {add:[], update:[], removeExerciseIds:[]}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: routineId · Body: {add:[], update:[], removeExerciseIds:[]}",
+        "x-source-response": "{routineId, exercises, updatedAt}",
+        "x-priority": "원본 ROUTINE-002 · P0 · MVP"
+      }
+    },
+    "/api/v1/routines": {
+      "post": {
+        "tags": [
+          "ROUTINE"
+        ],
+        "summary": "루틴 생성",
+        "description": "루틴명과 운동별 세트·횟수·중량·휴식시간을 저장한다.",
+        "operationId": "routine",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {routineId,name,exercises,createdAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "VALIDATION_ERROR"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "EXERCISE_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "EXERCISE_NOT_FOUND"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {name, exercises:[{exerciseId,sets,reps,weight,restSeconds,order}]}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {name, exercises:[{exerciseId,sets,reps,weight,restSeconds,order}]}",
+        "x-source-response": "{routineId,name,exercises,createdAt}",
+        "x-priority": "원본 ROUTINE-001 · P0 · MVP"
+      }
+    },
+    "/api/v1/users/me/level": {
+      "get": {
+        "tags": [
+          "REWARD"
+        ],
+        "summary": "레벨 정보 조회",
+        "description": "현재 레벨·누적 XP·다음 레벨 요구 XP와 최근 레벨업 여부를 조회한다.",
+        "operationId": "reward",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {level, currentXp, nextLevelXp, progressPercent, lastLevelUpAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: 없음",
+        "x-source-response": "{level, currentXp, nextLevelXp, progressPercent, lastLevelUpAt}",
+        "x-priority": "원본 REWARD-002 · P1 · MVP"
+      }
+    },
+    "/api/v1/rewards/workouts/{workoutId}": {
+      "get": {
+        "tags": [
+          "REWARD"
+        ],
+        "summary": "운동 보상 조회",
+        "description": "운동 완료로 계산된 XP와 Growth 보상 내역을 조회한다.",
+        "operationId": "reward",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "workoutId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {workoutId, xp, growthDelta, bonuses, grantedAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "REWARD_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "REWARD_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: workoutId",
+        "x-source-response": "{workoutId, xp, growthDelta, bonuses, grantedAt}",
+        "x-priority": "원본 REWARD-001 · P1 · MVP · 중복 지급 금지"
+      }
+    },
+    "/api/v1/avatar/items": {
+      "get": {
+        "tags": [
+          "AVATAR"
+        ],
+        "summary": "아바타 아이템 목록 조회",
+        "description": "운동 횟수·스트릭·목표 달성으로 해금된 아바타 아이템을 조회한다.",
+        "operationId": "avatar",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "status(unlocked|locked|all)",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "cursor",
+            "required": true
+          },
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "size",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {items:[{itemId,name,type,unlocked,unlockCondition,equipped}], nextCursor}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_QUERY"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_QUERY"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: status(unlocked|locked|all), cursor, size",
+        "x-source-response": "{items:[{itemId,name,type,unlocked,unlockCondition,equipped}], nextCursor}",
+        "x-priority": "원본 AVATAR-003 · P1 · 부분 MVP"
+      }
+    },
+    "/api/v1/avatar/growth-stage": {
+      "get": {
+        "tags": [
+          "AVATAR"
+        ],
+        "summary": "아바타 성장 단계 조회",
+        "description": "Growth 구간에 따른 Beginner~Peak Form 단계와 모델 파라미터를 조회한다.",
+        "operationId": "avatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {growth, stage, minGrowth, maxGrowth, modelKey, morphValue}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "AVATAR_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "AVATAR_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: 없음",
+        "x-source-response": "{growth, stage, minGrowth, maxGrowth, modelKey, morphValue}",
+        "x-priority": "원본 AVATAR-002 · P0 · MVP · 게임적 시각화"
+      }
+    },
+    "/api/v1/avatar": {
+      "get": {
+        "tags": [
+          "AVATAR"
+        ],
+        "summary": "현재 아바타 조회",
+        "description": "사용자의 Level·Growth·Stage와 표시할 3D 아바타 상태를 조회한다.",
+        "operationId": "avatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {level, growth, stage, modelKey, morphValue, equippedItems, weeklyGoal}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "AVATAR_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "AVATAR_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: 없음",
+        "x-source-response": "{level, growth, stage, modelKey, morphValue, equippedItems, weeklyGoal}",
+        "x-priority": "원본 AVATAR-001 · P0 · MVP"
+      }
+    },
+    "/api/v1/streaks/weekly": {
+      "get": {
+        "tags": [
+          "GOAL"
+        ],
+        "summary": "주간 스트릭 조회",
+        "description": "연속 주간 목표 달성 횟수와 최근 달성 상태를 조회한다.",
+        "operationId": "goal",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {currentStreak, longestStreak, lastAchievedWeek, status}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: 없음",
+        "x-source-response": "{currentStreak, longestStreak, lastAchievedWeek, status}",
+        "x-priority": "원본 GOAL-005 · P1 · MVP"
+      }
+    },
+    "/api/v1/goals/weekly/current": {
+      "get": {
+        "tags": [
+          "GOAL"
+        ],
+        "summary": "주간 목표 조회",
+        "description": "현재 주의 목표 운동 횟수와 완료 횟수를 조회한다.",
+        "operationId": "goal",
+        "parameters": [
+          {
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "name": "timezone",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {weekStart, weekEnd, targetCount, completedCount, achieved}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_TIMEZONE"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_TIMEZONE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "WEEKLY_GOAL_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "WEEKLY_GOAL_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: timezone",
+        "x-source-response": "{weekStart, weekEnd, targetCount, completedCount, achieved}",
+        "x-priority": "원본 GOAL-004 · P0 · MVP"
+      }
+    },
+    "/api/v1/goals/{goalId}/complete": {
+      "post": {
+        "tags": [
+          "GOAL"
+        ],
+        "summary": "운동 목표 완료 처리",
+        "description": "Growth 100 도달 목표를 완료하고 Peak Form·보상·이력을 확정한다.",
+        "operationId": "goal",
+        "parameters": [
+          {
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "name": "goalId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {goalId, status:COMPLETED, peakFormUnlocked, rewards, completedAt}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "GROWTH_NOT_REACHED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "GROWTH_NOT_REACHED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "FORBIDDEN"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "GOAL_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "GOAL_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ALREADY_COMPLETED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ALREADY_COMPLETED"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {expectedVersion}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Path: goalId · Body: {expectedVersion}",
+        "x-source-response": "{goalId, status:COMPLETED, peakFormUnlocked, rewards, completedAt}",
+        "x-priority": "원본 GOAL-003 · P0 · MVP · 멱등 처리"
+      }
+    },
+    "/api/v1/goals/active/progress": {
+      "get": {
+        "tags": [
+          "GOAL"
+        ],
+        "summary": "현재 목표 진행도 조회",
+        "description": "완료 운동·주간 목표·루틴 완료율·PR을 반영한 현재 Growth를 조회한다.",
+        "operationId": "goal",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {goalId, growth, previousGrowth, stage, factors, updatedAt}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_GOAL_NOT_FOUND"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_GOAL_NOT_FOUND"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Query: 없음",
+        "x-source-response": "{goalId, growth, previousGrowth, stage, factors, updatedAt}",
+        "x-priority": "원본 GOAL-002 · P0 · MVP · 서버 계산값"
+      }
+    },
+    "/api/v1/goals": {
+      "post": {
+        "tags": [
+          "GOAL"
+        ],
+        "summary": "운동 목표 생성",
+        "description": "아바타 Growth의 기준이 되는 활성 운동 목표와 첫 Weekly Goal을 생성한다.",
+        "operationId": "goal",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "성공: {goalId, status, growth:0, weeklyGoal}"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "INVALID_GOAL"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "INVALID_GOAL"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "UNAUTHORIZED"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "UNAUTHORIZED"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "ACTIVE_GOAL_EXISTS"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "ACTIVE_GOAL_EXISTS"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "요청 본문. 원본 형태: {goalType, startDate, endDate, weeklyWorkoutTarget}",
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": true
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-source-request": "Body: {goalType, startDate, endDate, weeklyWorkoutTarget}",
+        "x-source-response": "{goalId, status, growth:0, weeklyGoal}",
+        "x-priority": "원본 GOAL-001 · P0 · MVP"
+      }
+    }
+  }
+}

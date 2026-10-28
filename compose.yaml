@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gymup
+      POSTGRES_USER: gymup
+      POSTGRES_PASSWORD: gymup
+    ports:
+      - "5432:5432"
+    volumes:
+      - gymup-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymup -d gymup"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    profiles: ["legacy-api"]
+    build: .
+    env_file: .env
+    environment:
+      GYMUP_DATABASE_URL: postgresql+asyncpg://gymup:gymup@postgres:5432/gymup
+    ports:
+      - "8002:8000"
+    volumes:
+      - gymup-media:/srv/gymup/data/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    env_file: .env
+    environment:
+      GYMUP_DATABASE_URL: postgresql+asyncpg://gymup:gymup@postgres:5432/gymup
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  kotlin-api:
+    build:
+      context: ./kotlin-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GYMUP_JDBC_DATABASE_URL: jdbc:postgresql://postgres:5432/gymup
+      GYMUP_DATABASE_USER: gymup
+      GYMUP_DATABASE_PASSWORD: gymup
+      GYMUP_KOTLIN_PORT: 8001
+      GYMUP_KOTLIN_PUBLIC_BASE_URL: ${GYMUP_KOTLIN_PUBLIC_BASE_URL:-http://localhost:8000}
+      GYMUP_MEDIA_ROOT: /srv/gymup/data/media
+    ports:
+      - "8000:8001"
+    volumes:
+      - gymup-media:/srv/gymup/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  photo-worker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "app.photo_worker"]
+    env_file: .env
+    environment:
+      GYMUP_DATABASE_URL: postgresql+asyncpg://gymup:gymup@postgres:5432/gymup
+      GYMUP_MEDIA_ROOT: /srv/gymup/data/media
+    volumes:
+      - gymup-media:/srv/gymup/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  gymup-postgres-data:
+  gymup-media:

@@ -1,93 +1,67 @@
-# Java Backend V1
+# GymUp Backend
 
-Java와 Spring Boot 기반의 백엔드 시작 템플릿입니다.
-인증, 보안 설정, 헬스 체크, 예외 응답, HTTP 로깅, 테스트 기본 구조를 포함합니다.
+GymUp MVP API는 Kotlin + Spring Boot, PostgreSQL로 실행합니다. Python은 사진 필터와 Workout Stamp 합성 작업을 처리하는 별도 워커로 유지합니다. 기존 FastAPI 서버는 이관 확인과 롤백을 위한 `legacy-api` Compose profile에 남아 있습니다.
 
-## GitHub 템플릿으로 사용하기
+## 구성
 
-1. GitHub 저장소의 `Settings > General > Template repository` 옵션을 켭니다.
-2. 새 프로젝트를 만들 때 `Use this template` 버튼으로 저장소를 생성합니다.
-3. 생성된 저장소에서 아래 항목을 프로젝트에 맞게 변경합니다.
+- `kotlin-api/`: Kotlin REST API, JWT 검증, JDBC 접근
+- `app/`: 기존 FastAPI 및 Python 사진 처리 워커
+- `alembic/`: 기존 DB 구조를 유지하는 스키마 마이그레이션
+- `openapi.json`, `spec/api-spec.tsv`: API 계약 원본
+- `docs/concurrency.md`: 행 잠금, 버전 검사, DB 제약 규칙
+- `CONTRIBUTING.md`: Issue·Branch·Commit·PR 규칙
 
-| 파일 | 변경할 내용 |
-| --- | --- |
-| `settings.gradle` | `rootProject.name` |
-| `build.gradle` | `group`, `version` |
-| `src/main/resources/application.yml` | `spring.application.name`, `server.port` |
-| `src/main/java/...` | 기본 패키지명 |
-| `src/test/java/...` | 테스트 패키지명 |
+## Docker Compose 실행
 
-## 기술 스택
+1. Docker Desktop을 설치합니다.
+2. `.env.example`을 `.env`로 복사합니다.
+3. 서버를 실행합니다.
 
-- Java 21
-- Spring Boot 4.1
-- Spring Security
-- Gradle Groovy DSL
-- JUnit 5
+   ```powershell
+   docker compose up --build
+   ```
 
-## 프로젝트 구조
+Kotlin API는 `http://localhost:8000`에서 응답합니다. `GET /api/v1/health`는 PostgreSQL 연결을 확인합니다. 사진 편집 요청은 PostgreSQL 작업 행으로 적재되고 `photo-worker`가 처리합니다. DB 마이그레이션은 Kotlin API 시작 전에 `migrate` 서비스가 적용합니다.
 
-```text
-src/main/java/com/teamnative/backend
-├── Application.java
-├── domain
-│   ├── auth
-│   │   ├── controller
-│   │   └── dto
-│   ├── health
-│   └── sample
-└── global
-    ├── config
-    ├── exception
-    └── logging
-```
+## Kotlin API 로컬 실행
 
-## 실행
-
-macOS 또는 Linux:
-
-```bash
-./gradlew bootRun
-```
-
-Windows PowerShell:
+- JDK 21
+- Gradle 8.14 이상 또는 Gradle 9.x
+- PostgreSQL 16
 
 ```powershell
-.\gradlew.bat bootRun
+$env:GYMUP_JDBC_DATABASE_URL = "jdbc:postgresql://localhost:5432/gymup"
+$env:GYMUP_DATABASE_USER = "gymup"
+$env:GYMUP_DATABASE_PASSWORD = "gymup"
+$env:GYMUP_JWT_SECRET = "local-development-only-change-this-secret"
+$env:GYMUP_ENVIRONMENT = "development"
+gradle -p kotlin-api bootRun
 ```
 
-## 테스트
+로컬 실행 기본 포트는 `8001`이며 `GYMUP_KOTLIN_PORT`로 바꿀 수 있습니다. Kotlin 서버는 기존 Alembic 스키마를 사용하고 자체적으로 테이블을 변경하지 않습니다.
 
-```bash
-./gradlew test
-```
+## 개발용 인증
 
-Windows PowerShell:
+`GYMUP_ENVIRONMENT=development`에서 `POST /api/v1/auth/dev-token`으로 테스트용 JWT를 발급받습니다. 응답의 `accessToken`을 API의 Bearer 토큰으로 사용합니다. 이 경로는 운영 환경에서 404를 반환합니다.
+
+## 기존 FastAPI 서버
+
+기존 서버를 별도 포트로 실행하려면 다음을 사용합니다.
 
 ```powershell
-.\gradlew.bat test
+docker compose --profile legacy-api up --build api
 ```
 
-## 로깅
+기존 API는 호스트 포트 `8002`로 열립니다. Kotlin API와 동시에 실행해 동작을 비교할 수 있습니다.
 
-기본 HTTP 요청/응답 로거가 포함되어 있습니다.
+## 동작 범위와 임시 정책
 
-- 서버 시작과 종료 이벤트를 기록합니다.
-- 요청과 응답에 `X-Trace-Id`를 부여해 같은 요청 흐름을 추적할 수 있습니다.
-- HTTP method, path, query, status, duration, client IP, 일부 header, body를 기록합니다.
-- 요청/응답 body는 최대 2KB까지만 기록합니다.
-- `authorization`, `password`, `token`, `secret`, `cookie` 등 민감한 값은 마스킹합니다.
+- API는 사용자 설정, 루틴, 운동 세션·세트·휴식, 보상, 기록·통계, 목표·아바타, 사진 업로드·앨범·편집 작업 경로를 제공합니다.
+- 사진은 공유 Docker volume에 저장합니다. Kotlin API는 작업을 `photo_jobs`에 기록하고 Python 워커가 `FOR UPDATE SKIP LOCKED`로 하나씩 가져갑니다.
+- 운동 가이드 데이터가 없어 가이드 조회는 `GUIDE_NOT_FOUND`, 아바타 아이템 카탈로그가 없어 빈 목록을 반환합니다.
+- 성장·XP 공식은 명세에 없어 완료 세션당 Growth 10, 세트당 XP 10, 운동 완료 XP 50을 사용합니다.
+- 레거시 `documents` 행은 Kotlin에서 읽고 쓸 때 도메인 테이블로 승격합니다. 새 쓰기는 정규화된 테이블과 하위 행을 사용합니다.
+- 수정 요청은 DB 행 잠금과 유일 제약으로 직렬화하며, 운동 완료는 최신 `expectedVersion`을 요구합니다. 중복 제약 충돌은 409로 반환합니다.
+- `openapi.json`은 전달된 계약 원본입니다. 코드 이관 후 계약 비교와 서버 실행 검증이 필요합니다.
 
-## 확인용 API
 
-- `GET /health`
-- `GET /`
-- `GET /api/v1/public/ping`
-- `GET /api/v1/private/ping`
-- `POST /api/v1/auth/login`
-
-## 템플릿 유지보수
-
-- `.github/workflows/ci.yml`: Pull request와 `main` 브랜치 push 시 테스트를 실행합니다.
-- `.github/dependabot.yml`: Gradle과 GitHub Actions 의존성 업데이트 PR을 주기적으로 생성합니다.
-- `.github/pull_request_template.md`: 새 프로젝트에서도 기본 PR 체크리스트를 제공합니다.

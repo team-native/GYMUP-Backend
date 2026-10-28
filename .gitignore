@@ -5,8 +5,20 @@ out/
 
 .idea/
 *.iml
-
 .DS_Store
 Thumbs.db
-
 *.log
+
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+data/
+*.egg-info/
+/kotlin-api/.gradle/
+/kotlin-api/build/
