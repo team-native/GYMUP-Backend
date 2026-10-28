@@ -1,9 +1,13 @@
 from pathlib import Path
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.documents import get_doc, save_doc
 from app.db.session import SessionFactory
-from app.api.v1.common import now_iso
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 async def process_photo_job(owner_id: str, job_id: str) -> None:
     """Small in-process MVP worker. Replace with a durable queue before scaling."""
@@ -13,7 +17,13 @@ async def process_photo_job(owner_id: str, job_id: str) -> None:
             return
         photo = await get_doc(session, owner_id, "photo", job.payload["photoId"])
         if not photo:
-            job.payload = job.payload | {"status": "FAILED", "error": "PHOTO_NOT_FOUND"}
+            await save_doc(
+                session,
+                owner_id,
+                "photo_job",
+                job.payload | {"status": "FAILED", "error": "PHOTO_NOT_FOUND"},
+                job_id,
+            )
             await session.commit()
             return
         try:
@@ -61,7 +71,23 @@ async def process_photo_job(owner_id: str, job_id: str) -> None:
             image.save(output, format="JPEG", quality=92, optimize=True)
             updated = photo.payload | {"editedPath": str(output), "editedAt": now_iso()}
             await save_doc(session, owner_id, "photo", updated, photo.id)
-            job.payload = job.payload | {"status": "COMPLETED", "completedAt": now_iso()}
+            await save_doc(
+                session,
+                owner_id,
+                "photo_job",
+                job.payload | {"status": "COMPLETED", "completedAt": now_iso()},
+                job_id,
+            )
         except Exception:
-            job.payload = job.payload | {"status": "FAILED", "error": "IMAGE_PROCESSING_FAILED", "failedAt": now_iso()}
+            await save_doc(
+                session,
+                owner_id,
+                "photo_job",
+                job.payload | {
+                    "status": "FAILED",
+                    "error": "IMAGE_PROCESSING_FAILED",
+                    "failedAt": now_iso(),
+                },
+                job_id,
+            )
         await session.commit()
